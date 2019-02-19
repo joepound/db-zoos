@@ -1,31 +1,32 @@
-/* Server imports */
-
 const express = require("express");
 const helmet = require("helmet");
-const morgan = require("morgan");
 
-// const zooRoutes = require("./middleware/routes/zoos/routes");
-// const bearRoutes = require("./middleware/routes/bears/routes");
-const rootRoute = require("./middleware/routes/root");
+const knex = require("knex");
 
-const errorRouter = require("./middleware/routes/errorRouter");
+const knexConfig = {
+  client: "sqlite3",
+  connection: { filename: "./data/lambda.sqlite3" },
+  useNullAsDefault: true
+};
 
-// server setup
+const db = knex(knexConfig);
+
 const server = express();
 
-// built-in middleware
 server.use(express.json());
-
-// third party middleware
 server.use(helmet());
-server.use(morgan("dev"));
 
-// custom routing middleware
-// server.use("/api/zoos", zooRoutes);
-// server.use("/api/bears", bearRoutes);
-server.use("/", rootRoute);
+// endpoints here
 
-// custom error-handling middleware
-server.use(errorRouter);
+server.get("/api/zoos", (req, res) => {
+  db("zoos")
+    .then(baaa => res.status(200).json(baaa))
+    .catch(err => {
+      console.log(err);
+      res.status(500).json({
+        err
+      });
+    });
+});
 
 module.exports = server;
