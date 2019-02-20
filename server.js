@@ -1,25 +1,27 @@
+/* Server imports */
 
 const express = require("express");
 const helmet = require("helmet");
+const morgan = require("morgan");
 
-const db = require('./data/dbConfig');
+const rootRoute = require("./rootRoute");
+const mainRoutes = require("./mainRoutes");
+const errorRoute = require("./errorRoute");
 
+// server setup
 const server = express();
 
+// built-in middleware
 server.use(express.json());
+
+// third party middleware
 server.use(helmet());
+server.use(morgan("dev"));
 
-// endpoints here
-
-server.get("/api/zoos", (req, res) => {
-  db("zoos")
-    .then(baaa => res.status(200).json(baaa))
-    .catch(err => {
-      console.log(err);
-      res.status(500).json({
-        err
-      });
-    });
-});
+// custom routing middleware
+server.use("/api/zoos", mainRoutes("zoos"));
+server.use("/api/bears", mainRoutes("bears"));
+server.use("/", rootRoute); // routing for root URL
+server.use(errorRoute); // routing for URL's resolving to bad queries
 
 module.exports = server;
