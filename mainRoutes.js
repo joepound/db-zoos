@@ -2,7 +2,7 @@ const express = require("express");
 
 const db = require("./data/dbConfig");
 
-function route(tableName) {
+module.exports = function(tableName) {
   const router = express.Router();
 
   router.post("/", function(req, res) {
@@ -16,8 +16,10 @@ function route(tableName) {
     if (name) {
       db(tableName)
         .insert({ name })
-        .then(newRow => res.status(201).json(newRow[0]))
-        .catch(err => {
+        .then(function(newRow) {
+          res.status(201).json(newRow[0]);
+        })
+        .catch(function(err) {
           if (err.errno === 19) {
             res
               .status(400)
@@ -36,8 +38,10 @@ function route(tableName) {
   router.get("/", function(req, res) {
     console.log(`\nAttempting to GET all ${tableName}...`);
     db(tableName)
-      .then(rows => res.status(200).json(rows))
-      .catch(err => {
+      .then(function(rows) {
+        res.status(200).json(rows);
+      })
+      .catch(function(err) {
         console.log(err);
         res.status(500).json({
           err
@@ -53,7 +57,7 @@ function route(tableName) {
     db(tableName)
       .where({ id })
       .first()
-      .then(row => {
+      .then(function(row) {
         if (row) {
           res.status(200).json(row);
         } else {
@@ -62,7 +66,7 @@ function route(tableName) {
             .json({ error: "Supplied ID does not belong to any entry." });
         }
       })
-      .catch(err => {
+      .catch(function(err) {
         console.log(err);
         res.status(500).json(err);
       })
@@ -80,7 +84,7 @@ function route(tableName) {
     db(tableName)
       .where({ id })
       .del()
-      .then(deletionCount => {
+      .then(function(deletionCount) {
         if (deletionCount) {
           res.sendStatus(200);
         } else {
@@ -89,14 +93,44 @@ function route(tableName) {
             .json({ error: "Supplied ID does not belong to any entry." });
         }
       })
-      .catch(err => {
+      .catch(function(err) {
         console.log(err);
         res.status(500).json(err);
       })
       .finally(`DELETE attempt for any ${tableName} with ID [${id}] finished.`);
   });
 
-  return router;
-}
+  router.put("/:id", function(req, res) {
+    const { id } = req.params;
 
-module.exports = route;
+    console.log(`\nAttempting to PUT all ${tableName} with ID [${id}]...`);
+
+    const { name } = req.body;
+
+    console.log("Checking if name was supplied...");
+    if (name) {
+      db(tableName)
+        .where({ id })
+        .update(req.body)
+        .then(function(updateCount) {
+          if (updateCount) {
+            res.status(200).json(updateCount);
+          } else {
+            res
+              .status(404)
+              .json({ error: "Supplied ID does not belong to any entry." });
+          }
+        })
+        .catch(function(err) {
+          console.log(err);
+          res.status(500).json(err);
+        })
+        .finally(console.log(`PUT attempt for ${tableName} record finished.`));
+    } else {
+      res.status(400).json({ error: "No name was supplied." });
+      console.log(`PUT attempt for ${tableName} record finished.`);
+    }
+  });
+
+  return router;
+};
