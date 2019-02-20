@@ -112,9 +112,9 @@ module.exports = function(tableName) {
       db(tableName)
         .where({ id })
         .update(req.body)
-        .then(function(updateCount) {
-          if (updateCount) {
-            res.status(200).json(updateCount);
+        .then(function(updatedRow) {
+          if (updatedRow) {
+            res.status(200).json(updatedRow);
           } else {
             res
               .status(404)
